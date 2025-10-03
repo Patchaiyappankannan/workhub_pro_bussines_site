@@ -1135,6 +1135,272 @@ class PrivacyAccordion {
     }
 }
 
+// Custom Cursor System
+class CustomCursor {
+    constructor() {
+        this.cursor = document.querySelector('.cursor');
+        this.cursorFollower = document.querySelector('.cursor-follower');
+        this.cursorText = document.querySelector('.cursor-text');
+        this.mouse = { x: 0, y: 0 };
+        this.follower = { x: 0, y: 0 };
+        
+        this.init();
+    }
+    
+    init() {
+        if (!this.cursor || !this.cursorFollower) return;
+        
+        this.bindEvents();
+        this.animate();
+    }
+    
+    bindEvents() {
+        document.addEventListener('mousemove', (e) => {
+            this.mouse.x = e.clientX;
+            this.mouse.y = e.clientY;
+        });
+        
+        // Hover effects
+        document.querySelectorAll('a, button, .hover-lift, .tilt-card').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                this.cursor.classList.add('hover');
+                this.cursorFollower.classList.add('hover');
+            });
+            
+            el.addEventListener('mouseleave', () => {
+                this.cursor.classList.remove('hover');
+                this.cursorFollower.classList.remove('hover');
+            });
+        });
+        
+        // Click effects
+        document.addEventListener('mousedown', () => {
+            this.cursor.classList.add('click');
+        });
+        
+        document.addEventListener('mouseup', () => {
+            this.cursor.classList.remove('click');
+        });
+        
+        // Text cursor for specific elements
+        document.querySelectorAll('.interactive-text').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                this.cursorText.textContent = el.textContent;
+                this.cursorText.classList.add('show');
+            });
+            
+            el.addEventListener('mouseleave', () => {
+                this.cursorText.classList.remove('show');
+            });
+        });
+    }
+    
+    animate() {
+        this.follower.x += (this.mouse.x - this.follower.x) * 0.1;
+        this.follower.y += (this.mouse.y - this.follower.y) * 0.1;
+        
+        this.cursor.style.left = this.mouse.x + 'px';
+        this.cursor.style.top = this.mouse.y + 'px';
+        
+        this.cursorFollower.style.left = this.follower.x + 'px';
+        this.cursorFollower.style.top = this.follower.y + 'px';
+        
+        this.cursorText.style.left = this.mouse.x + 'px';
+        this.cursorText.style.top = this.mouse.y + 'px';
+        
+        requestAnimationFrame(() => this.animate());
+    }
+}
+
+// 3D Tilt Effect
+class TiltEffect {
+    constructor() {
+        this.init();
+    }
+    
+    init() {
+        document.querySelectorAll('.tilt-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = (y - centerY) / 20;
+                const rotateY = (centerX - x) / 20;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.01)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
+            });
+        });
+    }
+}
+
+// Magnetic Effect
+class MagneticEffect {
+    constructor() {
+        this.init();
+    }
+    
+    init() {
+        document.querySelectorAll('.magnetic').forEach(element => {
+            element.addEventListener('mousemove', (e) => {
+                const rect = element.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                
+                const distance = Math.sqrt(x * x + y * y);
+                const maxDistance = 100;
+                
+                if (distance < maxDistance) {
+                    const strength = (maxDistance - distance) / maxDistance;
+                    const moveX = x * strength * 0.15;
+                    const moveY = y * strength * 0.15;
+                    
+                    element.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                }
+            });
+            
+            element.addEventListener('mouseleave', () => {
+                element.style.transform = 'translate(0px, 0px)';
+            });
+        });
+    }
+}
+
+// Mouse Parallax Effect
+class MouseParallax {
+    constructor() {
+        this.init();
+    }
+    
+    init() {
+        document.querySelectorAll('.parallax-element').forEach(element => {
+            element.addEventListener('mousemove', (e) => {
+                const rect = element.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                
+                const moveX = x * 0.1;
+                const moveY = y * 0.1;
+                
+                element.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+            
+            element.addEventListener('mouseleave', () => {
+                element.style.transform = 'translate(0px, 0px)';
+            });
+        });
+    }
+}
+
+// Ripple Effect
+class RippleEffect {
+    constructor() {
+        this.init();
+    }
+    
+    init() {
+        document.querySelectorAll('.ripple').forEach(element => {
+            element.addEventListener('click', (e) => {
+                const ripple = document.createElement('span');
+                const rect = element.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                ripple.classList.add('ripple-effect');
+                
+                element.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+    }
+}
+
+// Floating Elements Animation
+class FloatingElements {
+    constructor() {
+        this.init();
+    }
+    
+    init() {
+        document.querySelectorAll('.floating-icon').forEach(icon => {
+            icon.addEventListener('mouseenter', () => {
+                icon.style.animation = 'none';
+                icon.style.transform = 'scale(1.2) rotate(360deg)';
+                icon.style.transition = 'transform 0.5s ease';
+            });
+            
+            icon.addEventListener('mouseleave', () => {
+                icon.style.animation = 'float 6s ease-in-out infinite';
+                icon.style.transform = 'scale(1) rotate(0deg)';
+            });
+        });
+    }
+}
+
+// Interactive Text Effects
+class InteractiveText {
+    constructor() {
+        this.init();
+    }
+    
+    init() {
+        document.querySelectorAll('.interactive-text').forEach(text => {
+            text.addEventListener('mouseenter', () => {
+                text.style.transform = 'scale(1.05)';
+                text.style.color = 'var(--primary-blue)';
+            });
+            
+            text.addEventListener('mouseleave', () => {
+                text.style.transform = 'scale(1)';
+                text.style.color = '';
+            });
+        });
+    }
+}
+
+// Enhanced Button Interactions
+class ButtonInteractions {
+    constructor() {
+        this.init();
+    }
+    
+    init() {
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('mouseenter', () => {
+                button.style.transform = 'translateY(-2px) scale(1.05)';
+                button.style.boxShadow = '0 10px 25px rgba(37, 99, 235, 0.3)';
+            });
+            
+            button.addEventListener('mouseleave', () => {
+                button.style.transform = 'translateY(0) scale(1)';
+                button.style.boxShadow = '';
+            });
+            
+            button.addEventListener('mousedown', () => {
+                button.style.transform = 'translateY(0) scale(0.95)';
+            });
+            
+            button.addEventListener('mouseup', () => {
+                button.style.transform = 'translateY(-2px) scale(1.05)';
+            });
+        });
+    }
+}
+
 // Initialize all interactive features
 window.addEventListener('load', () => {
     // Initialize chatbot
@@ -1158,8 +1424,15 @@ window.addEventListener('load', () => {
     // Initialize privacy accordion
     new PrivacyAccordion();
     
-    // Initialize custom cursor
-    customCursor = new CustomCursor();
+    // Initialize mouse interactive features
+    new CustomCursor();
+    new TiltEffect();
+    new MagneticEffect();
+    new MouseParallax();
+    new RippleEffect();
+    new FloatingElements();
+    new InteractiveText();
+    new ButtonInteractions();
     
     document.body.classList.add('loaded');
 });
