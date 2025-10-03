@@ -1,0 +1,43 @@
+{
+  "name": "workhub-pro-business-site",
+  "version": "1.0.0",
+  "description": "A modern, interactive single-page application for WorkHub Pro business solutions",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 3000 -o",
+    "dev": "npx live-server --port=3000 --open=/index.html",
+    "build": "echo 'No build process required - pure HTML, CSS, and JavaScript'",
+    "lint": "echo 'Add linting tools if needed'"
+  },
+  "keywords": [
+    "business",
+    "website",
+    "single-page-application",
+    "interactive",
+    "responsive",
+    "modern",
+    "workhub-pro"
+  ],
+  "author": "WorkHub Pro",
+  "license": "PROPRIETARY",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/workhubpro/workhub-pro-business-site.git"
+  },
+  "bugs": {
+    "url": "https://github.com/workhubpro/workhub-pro-business-site/issues"
+  },
+  "homepage": "https://workhubpro.com",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
