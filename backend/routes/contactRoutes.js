@@ -8,10 +8,9 @@ const {
     deleteContact
 } = require('../controllers/contactController');
 const { validateContactForm } = require('../middleware/validation');
-const { contactFormLimiter } = require('../middleware/rateLimiter');
 
 // Public routes
-router.post('/submit', contactFormLimiter, validateContactForm, submitContactForm);
+router.post('/submit', validateContactForm, submitContactForm);
 
 // Admin routes (you might want to add authentication middleware here)
 router.get('/admin/contacts', getAllContacts);

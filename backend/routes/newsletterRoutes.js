@@ -8,10 +8,9 @@ const {
     getNewsletterStats
 } = require('../controllers/newsletterController');
 const { validateNewsletterSubscription, validateUnsubscribe } = require('../middleware/validation');
-const { newsletterLimiter } = require('../middleware/rateLimiter');
 
 // Public routes
-router.post('/subscribe', newsletterLimiter, validateNewsletterSubscription, subscribeNewsletter);
+router.post('/subscribe', validateNewsletterSubscription, subscribeNewsletter);
 router.post('/unsubscribe', validateUnsubscribe, unsubscribeNewsletter);
 
 // Admin routes (you might want to add authentication middleware here)
