@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorkHub Pro Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status.new { background: #dbeafe; color: #1e40af; }
+        .status.read { background: #fef3c7; color: #92400e; }
+        .status.replied { background: #d1fae5; color: #065f46; }
+        .status.closed { background: #f3f4f6; color: #374151; }
+        .status.active { background: #d1fae5; color: #065f46; }
+        .status.unsubscribed { background: #fecaca; color: #991b1b; }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #fecaca;
+        }
+
+        .success {
+            background: #f0fdf4;
+            color: #166534;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #bbf7d0;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .pagination button:hover {
+            background: #f3f4f6;
+        }
+
+        .pagination button.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-tachometer-alt"></i> WorkHub Pro Admin Dashboard</h1>
+            <p>Manage contacts and newsletter subscribers</p>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="totalContacts">-</div>
+                <div class="stat-label">Total Contacts</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="newContacts">-</div>
+                <div class="stat-label">New Contacts</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalSubscribers">-</div>
+                <div class="stat-label">Total Subscribers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="activeSubscribers">-</div>
+                <div class="stat-label">Active Subscribers</div>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h2><i class="fas fa-envelope"></i> Recent Contacts</h2>
+                <div id="contactsLoading" class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading contacts...
+                </div>
+                <div id="contactsError" class="error" style="display: none;"></div>
+                <div id="contactsContent" style="display: none;">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="contactsPagination"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><i class="fas fa-users"></i> Newsletter Subscribers</h2>
+                <div id="subscribersLoading" class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading subscribers...
+                </div>
+                <div id="subscribersError" class="error" style="display: none;"></div>
+                <div id="subscribersContent" style="display: none;">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Subscribed</th>
+                                    <th>Source</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subscribersTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="subscribersPagination"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AdminDashboard {
+            constructor() {
+                this.currentContactsPage = 1;
+                this.currentSubscribersPage = 1;
+                this.contactsPerPage = 10;
+                this.subscribersPerPage = 10;
+                this.init();
+            }
+
+            async init() {
+                await this.loadStats();
+                await this.loadContacts();
+                await this.loadSubscribers();
+            }
+
+            async loadStats() {
+                try {
+                    const response = await fetch('http://localhost:5000/api/newsletter/admin/stats');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        document.getElementById('totalContacts').textContent = data.data.total || 0;
+                        document.getElementById('newContacts').textContent = data.data.recent || 0;
+                        document.getElementById('totalSubscribers').textContent = data.data.total || 0;
+                        document.getElementById('activeSubscribers').textContent = data.data.active || 0;
+                    }
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            }
+
+            async loadContacts() {
+                const loading = document.getElementById('contactsLoading');
+                const error = document.getElementById('contactsError');
+                const content = document.getElementById('contactsContent');
+
+                try {
+                    loading.style.display = 'block';
+                    error.style.display = 'none';
+                    content.style.display = 'none';
+
+                    const response = await fetch(`http://localhost:5000/api/contact/admin/contacts?page=${this.currentContactsPage}&limit=${this.contactsPerPage}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.renderContacts(data.data.contacts);
+                        this.renderContactsPagination(data.data.pagination);
+                        loading.style.display = 'none';
+                        content.style.display = 'block';
+                    } else {
+                        throw new Error(data.message || 'Failed to load contacts');
+                    }
+                } catch (err) {
+                    loading.style.display = 'none';
+                    error.style.display = 'block';
+                    error.textContent = err.message;
+                }
+            }
+
+            async loadSubscribers() {
+                const loading = document.getElementById('subscribersLoading');
+                const error = document.getElementById('subscribersError');
+                const content = document.getElementById('subscribersContent');
+
+                try {
+                    loading.style.display = 'block';
+                    error.style.display = 'none';
+                    content.style.display = 'none';
+
+                    const response = await fetch(`http://localhost:5000/api/newsletter/admin/subscribers?page=${this.currentSubscribersPage}&limit=${this.subscribersPerPage}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.renderSubscribers(data.data.subscribers);
+                        this.renderSubscribersPagination(data.data.pagination);
+                        loading.style.display = 'none';
+                        content.style.display = 'block';
+                    } else {
+                        throw new Error(data.message || 'Failed to load subscribers');
+                    }
+                } catch (err) {
+                    loading.style.display = 'none';
+                    error.style.display = 'block';
+                    error.textContent = err.message;
+                }
+            }
+
+            renderContacts(contacts) {
+                const tbody = document.getElementById('contactsTableBody');
+                tbody.innerHTML = '';
+
+                contacts.forEach(contact => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${contact.name}</td>
+                        <td>${contact.email}</td>
+                        <td>${contact.subject.length > 50 ? contact.subject.substring(0, 50) + '...' : contact.subject}</td>
+                        <td><span class="status ${contact.status}">${contact.status}</span></td>
+                        <td>${new Date(contact.created_at).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="adminDashboard.viewContact(${contact.id})">View</button>
+                            <button class="btn btn-secondary" onclick="adminDashboard.updateContactStatus(${contact.id}, '${contact.status === 'new' ? 'read' : 'replied'}')">${contact.status === 'new' ? 'Mark Read' : 'Mark Replied'}</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            renderSubscribers(subscribers) {
+                const tbody = document.getElementById('subscribersTableBody');
+                tbody.innerHTML = '';
+
+                subscribers.forEach(subscriber => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${subscriber.email}</td>
+                        <td><span class="status ${subscriber.status}">${subscriber.status}</span></td>
+                        <td>${new Date(subscriber.subscribed_at).toLocaleDateString()}</td>
+                        <td>${subscriber.source}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            renderContactsPagination(pagination) {
+                const container = document.getElementById('contactsPagination');
+                container.innerHTML = '';
+
+                if (pagination.totalPages <= 1) return;
+
+                // Previous button
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = 'Previous';
+                prevBtn.disabled = !pagination.hasPrev;
+                prevBtn.onclick = () => {
+                    if (pagination.hasPrev) {
+                        this.currentContactsPage--;
+                        this.loadContacts();
+                    }
+                };
+                container.appendChild(prevBtn);
+
+                // Page numbers
+                for (let i = 1; i <= pagination.totalPages; i++) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.textContent = i;
+                    pageBtn.className = i === pagination.currentPage ? 'active' : '';
+                    pageBtn.onclick = () => {
+                        this.currentContactsPage = i;
+                        this.loadContacts();
+                    };
+                    container.appendChild(pageBtn);
+                }
+
+                // Next button
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = 'Next';
+                nextBtn.disabled = !pagination.hasNext;
+                nextBtn.onclick = () => {
+                    if (pagination.hasNext) {
+                        this.currentContactsPage++;
+                        this.loadContacts();
+                    }
+                };
+                container.appendChild(nextBtn);
+            }
+
+            renderSubscribersPagination(pagination) {
+                const container = document.getElementById('subscribersPagination');
+                container.innerHTML = '';
+
+                if (pagination.totalPages <= 1) return;
+
+                // Previous button
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = 'Previous';
+                prevBtn.disabled = !pagination.hasPrev;
+                prevBtn.onclick = () => {
+                    if (pagination.hasPrev) {
+                        this.currentSubscribersPage--;
+                        this.loadSubscribers();
+                    }
+                };
+                container.appendChild(prevBtn);
+
+                // Page numbers
+                for (let i = 1; i <= pagination.totalPages; i++) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.textContent = i;
+                    pageBtn.className = i === pagination.currentPage ? 'active' : '';
+                    pageBtn.onclick = () => {
+                        this.currentSubscribersPage = i;
+                        this.loadSubscribers();
+                    };
+                    container.appendChild(pageBtn);
+                }
+
+                // Next button
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = 'Next';
+                nextBtn.disabled = !pagination.hasNext;
+                nextBtn.onclick = () => {
+                    if (pagination.hasNext) {
+                        this.currentSubscribersPage++;
+                        this.loadSubscribers();
+                    }
+                };
+                container.appendChild(nextBtn);
+            }
+
+            async viewContact(id) {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/contact/admin/contacts/${id}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        const contact = data.data;
+                        alert(`Contact Details:\n\nName: ${contact.name}\nEmail: ${contact.email}\nSubject: ${contact.subject}\nMessage: ${contact.message}\nStatus: ${contact.status}\nDate: ${new Date(contact.created_at).toLocaleString()}`);
+                    } else {
+                        alert('Error loading contact details');
+                    }
+                } catch (error) {
+                    alert('Error loading contact details');
+                }
+            }
+
+            async updateContactStatus(id, newStatus) {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/contact/admin/contacts/${id}/status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('Contact status updated successfully');
+                        this.loadContacts();
+                    } else {
+                        alert('Error updating contact status');
+                    }
+                } catch (error) {
+                    alert('Error updating contact status');
+                }
+            }
+        }
+
+        // Initialize dashboard when page loads
+        const adminDashboard = new AdminDashboard();
+    </script>
+</body>
+</html>

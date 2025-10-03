@@ -66,7 +66,7 @@ window.addEventListener('scroll', () => {
 // Form submission handling
 const contactForm = document.querySelector('.contact-form');
 if (contactForm) {
-    contactForm.addEventListener('submit', function(e) {
+    contactForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         // Get form data
@@ -87,9 +87,43 @@ if (contactForm) {
             return;
         }
         
-        // Simulate form submission
-        showNotification('Thank you for your message! We\'ll get back to you soon.', 'success');
-        this.reset();
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Sending...';
+        submitBtn.disabled = true;
+        
+        try {
+            // Submit to backend API
+            const response = await fetch('http://localhost:5000/api/contact/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name.trim(),
+                    email: email.trim(),
+                    subject: subject.trim(),
+                    message: message.trim()
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification(data.message, 'success');
+                this.reset();
+            } else {
+                showNotification(data.message || 'Failed to send message. Please try again.', 'error');
+            }
+        } catch (error) {
+            console.error('Contact form error:', error);
+            showNotification('Network error. Please check your connection and try again.', 'error');
+        } finally {
+            // Reset button state
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
     });
 }
 
@@ -980,14 +1014,54 @@ class FooterInteractions {
     initNewsletter() {
         const newsletterForm = document.querySelector('.newsletter');
         if (newsletterForm) {
-            newsletterForm.addEventListener('submit', (e) => {
+            newsletterForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const email = newsletterForm.querySelector('input[type="email"]').value;
+                const emailInput = newsletterForm.querySelector('input[type="email"]');
+                const email = emailInput.value.trim();
+                const submitBtn = newsletterForm.querySelector('button[type="submit"]');
                 
-                if (email) {
-                    // Show success message
-                    this.showNotification('Thank you for subscribing!', 'success');
-                    newsletterForm.reset();
+                if (!email) {
+                    this.showNotification('Please enter your email address', 'error');
+                    return;
+                }
+                
+                if (!isValidEmail(email)) {
+                    this.showNotification('Please enter a valid email address', 'error');
+                    return;
+                }
+                
+                // Show loading state
+                const originalContent = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                submitBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('http://localhost:5000/api/newsletter/subscribe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            email: email,
+                            source: 'website'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.showNotification(data.message, 'success');
+                        newsletterForm.reset();
+                    } else {
+                        this.showNotification(data.message || 'Failed to subscribe. Please try again.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Newsletter subscription error:', error);
+                    this.showNotification('Network error. Please check your connection and try again.', 'error');
+                } finally {
+                    // Reset button state
+                    submitBtn.innerHTML = originalContent;
+                    submitBtn.disabled = false;
                 }
             });
         }
