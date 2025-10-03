@@ -47,8 +47,8 @@
         }
 
         .dashboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 30px;
             margin-bottom: 40px;
         }
@@ -59,6 +59,12 @@
             padding: 30px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             border: 1px solid #e2e8f0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
         }
 
         .card h2 {
@@ -229,6 +235,81 @@
             cursor: not-allowed;
         }
 
+        .search-filter-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .refresh-btn {
+            padding: 10px 20px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #059669;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -238,12 +319,36 @@
                 font-size: 2rem;
             }
 
-            .dashboard {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .search-filter-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input {
+                min-width: auto;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats {
                 grid-template-columns: 1fr;
             }
 
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
+            .card {
+                padding: 20px;
+            }
+
+            .header {
+                padding: 20px;
             }
         }
     </style>
@@ -276,7 +381,24 @@
 
         <div class="dashboard">
             <div class="card">
-                <h2><i class="fas fa-envelope"></i> Recent Contacts</h2>
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-envelope"></i> Recent Contacts</h2>
+                    <button class="refresh-btn" onclick="adminDashboard.loadContacts()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                
+                <div class="search-filter-container">
+                    <input type="text" id="contactsSearch" class="search-input" placeholder="Search contacts..." onkeyup="adminDashboard.filterContacts()">
+                    <select id="contactsStatusFilter" class="filter-select" onchange="adminDashboard.filterContacts()">
+                        <option value="">All Status</option>
+                        <option value="new">New</option>
+                        <option value="read">Read</option>
+                        <option value="replied">Replied</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+
                 <div id="contactsLoading" class="loading">
                     <i class="fas fa-spinner fa-spin"></i> Loading contacts...
                 </div>
@@ -303,7 +425,22 @@
             </div>
 
             <div class="card">
-                <h2><i class="fas fa-users"></i> Newsletter Subscribers</h2>
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-users"></i> Newsletter Subscribers</h2>
+                    <button class="refresh-btn" onclick="adminDashboard.loadSubscribers()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <div class="search-filter-container">
+                    <input type="text" id="subscribersSearch" class="search-input" placeholder="Search subscribers..." onkeyup="adminDashboard.filterSubscribers()">
+                    <select id="subscribersStatusFilter" class="filter-select" onchange="adminDashboard.filterSubscribers()">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="unsubscribed">Unsubscribed</option>
+                    </select>
+                </div>
+
                 <div id="subscribersLoading" class="loading">
                     <i class="fas fa-spinner fa-spin"></i> Loading subscribers...
                 </div>
@@ -336,6 +473,10 @@
                 this.currentSubscribersPage = 1;
                 this.contactsPerPage = 10;
                 this.subscribersPerPage = 10;
+                this.allContacts = [];
+                this.allSubscribers = [];
+                this.filteredContacts = [];
+                this.filteredSubscribers = [];
                 this.init();
             }
 
@@ -375,7 +516,9 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        this.renderContacts(data.data.contacts);
+                        this.allContacts = data.data.contacts;
+                        this.filteredContacts = [...this.allContacts];
+                        this.renderContacts(this.filteredContacts);
                         this.renderContactsPagination(data.data.pagination);
                         loading.style.display = 'none';
                         content.style.display = 'block';
@@ -403,7 +546,9 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        this.renderSubscribers(data.data.subscribers);
+                        this.allSubscribers = data.data.subscribers;
+                        this.filteredSubscribers = [...this.allSubscribers];
+                        this.renderSubscribers(this.filteredSubscribers);
                         this.renderSubscribersPagination(data.data.pagination);
                         loading.style.display = 'none';
                         content.style.display = 'block';
@@ -577,6 +722,37 @@
                 } catch (error) {
                     alert('Error updating contact status');
                 }
+            }
+
+            filterContacts() {
+                const searchTerm = document.getElementById('contactsSearch').value.toLowerCase();
+                const statusFilter = document.getElementById('contactsStatusFilter').value;
+                
+                this.filteredContacts = this.allContacts.filter(contact => {
+                    const matchesSearch = contact.name.toLowerCase().includes(searchTerm) ||
+                                        contact.email.toLowerCase().includes(searchTerm) ||
+                                        contact.subject.toLowerCase().includes(searchTerm);
+                    const matchesStatus = !statusFilter || contact.status === statusFilter;
+                    
+                    return matchesSearch && matchesStatus;
+                });
+                
+                this.renderContacts(this.filteredContacts);
+            }
+
+            filterSubscribers() {
+                const searchTerm = document.getElementById('subscribersSearch').value.toLowerCase();
+                const statusFilter = document.getElementById('subscribersStatusFilter').value;
+                
+                this.filteredSubscribers = this.allSubscribers.filter(subscriber => {
+                    const matchesSearch = subscriber.email.toLowerCase().includes(searchTerm) ||
+                                        subscriber.source.toLowerCase().includes(searchTerm);
+                    const matchesStatus = !statusFilter || subscriber.status === statusFilter;
+                    
+                    return matchesSearch && matchesStatus;
+                });
+                
+                this.renderSubscribers(this.filteredSubscribers);
             }
         }
 
