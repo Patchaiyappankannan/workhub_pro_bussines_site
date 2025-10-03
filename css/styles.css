@@ -2130,6 +2130,10 @@ html {
     box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
 }
 
+.chatbot-toggle.hidden {
+    display: none;
+}
+
 .chatbot-badge {
     position: absolute;
     top: -5px;
@@ -2149,9 +2153,9 @@ html {
 
 .chatbot-window {
     position: absolute;
-    bottom: 80px;
+    bottom: 0;
     right: 0;
-    width: 350px;
+    width: 310px;
     height: 500px;
     background: var(--white);
     border-radius: 20px;
@@ -2226,6 +2230,13 @@ html {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.chatbot-messages::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
 }
 
 .message {

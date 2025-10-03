@@ -634,6 +634,7 @@ class Chatbot {
     toggleChat() {
         this.isOpen = !this.isOpen;
         this.window.classList.toggle('active', this.isOpen);
+        this.toggle.classList.toggle('hidden', this.isOpen);
         
         if (this.isOpen) {
             this.input.focus();
@@ -644,6 +645,7 @@ class Chatbot {
     closeChat() {
         this.isOpen = false;
         this.window.classList.remove('active');
+        this.toggle.classList.remove('hidden');
     }
     
     hideBadge() {
