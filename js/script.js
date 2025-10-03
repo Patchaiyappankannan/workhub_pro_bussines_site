@@ -45,23 +45,65 @@ window.addEventListener('scroll', () => {
 const sections = document.querySelectorAll('section');
 const navLinks = document.querySelectorAll('.nav-link');
 
-window.addEventListener('scroll', () => {
-    let current = '';
-    sections.forEach(section => {
-        const sectionTop = section.offsetTop;
-        const sectionHeight = section.clientHeight;
-        if (scrollY >= (sectionTop - 200)) {
-            current = section.getAttribute('id');
-        }
-    });
-
+function updateActiveNavLink() {
+    // First, remove active class from ALL nav links
     navLinks.forEach(link => {
         link.classList.remove('active');
-        if (link.getAttribute('href') === `#${current}`) {
-            link.classList.add('active');
-        }
     });
+    
+    let current = '';
+    const scrollPosition = window.scrollY;
+    
+    // If we're at the top of the page, make home active
+    if (scrollPosition < 100) {
+        current = 'home';
+    } else {
+        // Find the section that is most visible in the viewport
+        let bestSection = '';
+        let maxVisibility = 0;
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            const sectionBottom = sectionTop + sectionHeight;
+            
+            // Calculate how much of the section is visible
+            const visibleTop = Math.max(scrollPosition, sectionTop);
+            const visibleBottom = Math.min(scrollPosition + window.innerHeight, sectionBottom);
+            const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+            const visibilityRatio = visibleHeight / Math.min(sectionHeight, window.innerHeight);
+            
+            // Only consider sections that are at least 30% visible
+            if (visibilityRatio > 0.3 && visibilityRatio > maxVisibility) {
+                maxVisibility = visibilityRatio;
+                bestSection = section.getAttribute('id');
+            }
+        });
+        
+        current = bestSection;
+    }
+
+    // Add active class to only the current section's nav link
+    if (current) {
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === `#${current}`) {
+                link.classList.add('active');
+            }
+        });
+    }
+}
+
+// Throttled scroll event for better performance
+let scrollTimeout;
+window.addEventListener('scroll', () => {
+    if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+    }
+    scrollTimeout = setTimeout(updateActiveNavLink, 10);
 });
+
+// Initial call to set active state on page load
+updateActiveNavLink();
 
 // Form submission handling
 const contactForm = document.querySelector('.contact-form');
