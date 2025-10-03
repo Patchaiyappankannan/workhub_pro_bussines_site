@@ -5,7 +5,7 @@ const path = require('path');
 require('dotenv').config();
 
 // Import database and email configuration
-const { testConnection, initializeDatabase } = require('./config/database');
+const { createDatabase, testConnection, initializeDatabase } = require('./config/database');
 const { verifyEmailConfig } = require('./config/email');
 
 // Import routes
@@ -163,6 +163,13 @@ process.on('SIGINT', () => {
 // Start server
 const startServer = async () => {
     try {
+        // Create database if it doesn't exist
+        const dbCreated = await createDatabase();
+        if (!dbCreated) {
+            console.error('❌ Failed to create database. Server will not start.');
+            process.exit(1);
+        }
+
         // Test database connection
         const dbConnected = await testConnection();
         if (!dbConnected) {

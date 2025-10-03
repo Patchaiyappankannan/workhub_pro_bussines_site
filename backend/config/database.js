@@ -13,8 +13,38 @@ const dbConfig = {
     queueLimit: 0
 };
 
+// Database configuration without database name (for creating database)
+const dbConfigWithoutDB = {
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'root12',
+    port: process.env.DB_PORT || 3306,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+};
+
 // Create connection pool
 const pool = mysql.createPool(dbConfig);
+
+// Create database if it doesn't exist
+const createDatabase = async () => {
+    try {
+        const tempPool = mysql.createPool(dbConfigWithoutDB);
+        const connection = await tempPool.getConnection();
+        
+        const dbName = process.env.DB_NAME || 'workhub_pro';
+        await connection.execute(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
+        console.log(`✅ Database '${dbName}' created/verified successfully`);
+        
+        connection.release();
+        await tempPool.end();
+        return true;
+    } catch (error) {
+        console.error('❌ Database creation failed:', error.message);
+        return false;
+    }
+};
 
 // Test database connection
 const testConnection = async () => {
@@ -97,6 +127,7 @@ const initializeDatabase = async () => {
 
 module.exports = {
     pool,
+    createDatabase,
     testConnection,
     initializeDatabase
 };
