@@ -135,37 +135,24 @@ if (contactForm) {
         submitBtn.textContent = 'Sending...';
         submitBtn.disabled = true;
         
-        try {
-            // Submit to backend API
-            const response = await fetch('http://localhost:5000/api/contact/submit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: name.trim(),
-                    email: email.trim(),
-                    subject: subject.trim(),
-                    message: message.trim()
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                showNotification(data.message, 'success');
-                this.reset();
-            } else {
-                showNotification(data.message || 'Failed to send message. Please try again.', 'error');
-            }
-        } catch (error) {
-            console.error('Contact form error:', error);
-            showNotification('Network error. Please check your connection and try again.', 'error');
-        } finally {
-            // Reset button state
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-        }
+    try {
+        // Open default mail client with prefilled fields
+        const to = 'info@workhubpro.in';
+        const mailSubject = `[Contact] ${subject.trim()} — ${name.trim()}`;
+        const mailBody = `Name: ${name.trim()}\nEmail: ${email.trim()}\nSubject: ${subject.trim()}\n\nMessage:\n${message.trim()}`;
+        const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
+        window.location.href = mailtoUrl;
+        
+        showNotification('Opening your email client…', 'success');
+        this.reset();
+    } catch (error) {
+        console.error('Contact form mailto error:', error);
+        showNotification('Unable to open your email client. Please email info@workhubpro.in.', 'error');
+    } finally {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
     });
 }
 
@@ -643,6 +630,73 @@ document.querySelectorAll('.service-card').forEach(card => {
 });
 
 // Interactive Chatbot
+class SiteKnowledge {
+    constructor() {
+        this.entries = [];
+        this.buildFromPage();
+    }
+    buildFromPage() {
+        const add = (title, text, link) => {
+            const content = (text || '').replace(/\s+/g, ' ').trim();
+            if (!content) return;
+            this.entries.push({ title, content, link, tokens: this.tokenize(`${title} ${content}`) });
+        };
+        const about = document.querySelector('#about .about-text');
+        if (about) add('About', about.textContent, '#about');
+        document.querySelectorAll('#services .service-card').forEach(card => {
+            const title = card.querySelector('h3')?.textContent || 'Service';
+            const text = card.querySelector('p')?.textContent || '';
+            add(`Service - ${title}`, text, '#services');
+        });
+        document.querySelectorAll('#products .product-card').forEach(card => {
+            const title = card.querySelector('h3')?.textContent || 'Product';
+            const text = card.querySelector('p')?.textContent || '';
+            add(`Product - ${title}`, text, '#products');
+        });
+        document.querySelectorAll('#faq .faq-item').forEach(item => {
+            const q = item.querySelector('.faq-header h3')?.textContent || 'Question';
+            const a = item.querySelector('.faq-body p')?.textContent || '';
+            add(`FAQ - ${q}`, a, '#faq');
+        });
+        // Contact info
+        const contact = document.querySelector('#contact');
+        if (contact) add('Contact', contact.textContent, '#contact');
+        // Privacy summary
+        const privacy = document.querySelector('#privacy-policy');
+        if (privacy) add('Privacy Policy', privacy.textContent, '#privacy-policy');
+    }
+    tokenize(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .split(/\s+/)
+            .filter(t => t && t.length > 2 && !this.stopwords.has(t));
+    }
+    score(queryTokens, entry) {
+        let overlap = 0;
+        const set = new Set(entry.tokens);
+        queryTokens.forEach(t => { if (set.has(t)) overlap++; });
+        // favor longer, informative entries slightly
+        const lengthBoost = Math.min(1.0, entry.tokens.length / 80);
+        return overlap + lengthBoost;
+    }
+    findBest(query) {
+        const queryTokens = this.tokenize(query);
+        if (queryTokens.length === 0 || this.entries.length === 0) return null;
+        let best = null;
+        let bestScore = 0;
+        for (const entry of this.entries) {
+            const s = this.score(queryTokens, entry);
+            if (s > bestScore) { best = entry; bestScore = s; }
+        }
+        if (bestScore < 2) return null; // threshold to avoid weak matches
+        return best;
+    }
+}
+SiteKnowledge.prototype.stopwords = new Set([
+    'the','and','for','you','your','with','that','this','our','are','from','have','has','was','were','will','can','how','what','why','when','who','about','into','over','under','all','any','but','not','out','say','says','use','used','using','get','got','gotten','more','most','other','some','such','than','then','them','they','their','there','here','also','just','like'
+]);
+
 class Chatbot {
     constructor() {
         this.toggle = document.getElementById('chatbotToggle');
@@ -653,6 +707,9 @@ class Chatbot {
         this.send = document.getElementById('chatbotSend');
         this.isOpen = false;
         this.isTyping = false;
+        this.conversation = []; // short-term memory of the last messages
+        this.maxMemory = 10;
+        this.knowledge = new SiteKnowledge();
         
         this.init();
     }
@@ -702,16 +759,21 @@ class Chatbot {
         if (!message || this.isTyping) return;
         
         this.addMessage(message, 'user');
+        this.remember('user', message);
         this.input.value = '';
         
-        // Simulate bot response
+        // Simulate bot response with human-like delays
+        const plannedResponse = this.generateResponse(message);
+        const initialDelay = 300 + Math.random() * 400;
         setTimeout(() => {
             this.showTyping();
+            const typingDelay = this.computeTypingDelay(plannedResponse);
             setTimeout(() => {
                 this.hideTyping();
-                this.addBotResponse(message);
-            }, 1500);
-        }, 500);
+                this.addMessage(plannedResponse, 'bot');
+                this.remember('bot', plannedResponse);
+            }, typingDelay);
+        }, initialDelay);
     }
     
     addMessage(text, sender) {
@@ -764,53 +826,90 @@ class Chatbot {
         this.isTyping = false;
     }
     
-    addBotResponse(userMessage) {
-        const responses = this.getBotResponses(userMessage);
-        const response = responses[Math.floor(Math.random() * responses.length)];
-        this.addMessage(response, 'bot');
+    computeTypingDelay(text) {
+        const base = 500; // base think time
+        const charsPerSecond = 12 + Math.random() * 8; // 12-20 cps
+        const duration = base + (text.length / charsPerSecond) * 1000;
+        return Math.min(3500, Math.max(700, duration));
     }
     
-    getBotResponses(message) {
+    generateResponse(message) {
         const lowerMessage = message.toLowerCase();
+        const lastUser = [...this.conversation].reverse().find(m => m.role === 'user');
+        const askedFollowUp = lastUser && lastUser.text && (lowerMessage === 'yes' || lowerMessage === 'yeah' || lowerMessage === 'sure' || lowerMessage === 'ok');
+        
+        if (askedFollowUp && this.conversation.length > 1) {
+            // context-aware follow-up
+            const previousInfo = this.conversation.slice(-3).map(m => m.text).join(' ');
+            return `Great! To tailor things better, could you share a bit more about your needs regarding "${previousInfo.substring(0, 60)}"?`;
+        }
+        
+        // Explicit intent: contacting the team
+        const contactIntent = /(reach|reach out|get in touch|talk|speak|connect|contact|call|email|phone).*\b(team|you|support|company)\b|\b(team|support)\b.*(reach|contact|call|email|phone)/i;
+        if (contactIntent.test(message)) {
+            return this.pick([
+                "You can reach our team at +91 63804 47105 or +91 909204 2692, or email info@workhubpro.in. We’re available 24/7.",
+                "Happy to connect — call +91 63804 47105 or +91 909204 2692, or email info@workhubpro.in anytime.",
+                "Fastest way: +91 63804 47105 / +91 909204 2692 or info@workhubpro.in. Prefer another channel?"
+            ]);
+        }
         
         if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-            return [
-                "Hello! Welcome to WorkHub Pro. How can I assist you today?",
-                "Hi there! I'm here to help you with any questions about our services.",
-                "Hello! Great to meet you. What would you like to know about WorkHub Pro?"
-            ];
+            return this.pick([
+                "Hey! Thanks for stopping by. How can I help today?",
+                "Hi there — I'm here to help with anything WorkHub Pro. What are you looking for?",
+                "Hello! Happy to assist. Are you exploring services, pricing, or something else?"
+            ]);
         } else if (lowerMessage.includes('service') || lowerMessage.includes('services')) {
-            return [
-                "We offer comprehensive business solutions including web development, mobile apps, cloud solutions, cybersecurity, analytics, and 24/7 support.",
-                "Our services include web development, mobile app development, cloud solutions, security, business analytics, and technical support. Which interests you most?",
-                "We provide end-to-end business solutions from web development to cloud infrastructure. What specific service are you looking for?"
-            ];
+            return this.pick([
+                "We cover web and mobile development, cloud, security, analytics, and 24/7 support. Which area should we focus on?",
+                "From websites and apps to cloud and cybersecurity — we've got you. What do you need right now?",
+                "End-to-end solutions: web, mobile, cloud, analytics, and support. What are your goals?"
+            ]);
         } else if (lowerMessage.includes('price') || lowerMessage.includes('cost')) {
-            return [
-                "Our pricing varies based on project scope. We offer flexible packages starting from $19/month for basic services. Would you like a custom quote?",
-                "We provide competitive pricing with packages starting at $19/month. I can connect you with our sales team for a detailed quote.",
-                "Our pricing is tailored to your needs. We offer everything from basic packages to enterprise solutions. Let me get you in touch with our team."
-            ];
+            return this.pick([
+                "Pricing depends on scope. Starter plans begin at $19/month. Want me to arrange a custom quote?",
+                "We tailor pricing to fit your goals. Plans start at $19/month — shall I connect you with our team?",
+                "Happy to help with costs. Give me a bit about your project and I'll estimate."
+            ]);
         } else if (lowerMessage.includes('contact') || lowerMessage.includes('phone')) {
-            return [
-                "You can reach us at +1 (555) 123-4567 or email us at info@workhubpro.com. We're available 24/7!",
-                "Contact us anytime at +1 (555) 123-4567 or info@workhubpro.com. Our team is ready to help!",
-                "We're here for you! Call +1 (555) 123-4567 or email info@workhubpro.com for immediate assistance."
-            ];
+            return this.pick([
+                "You can reach us at +91 63804 47105 or +91 909204 2692, or email info@workhubpro.in — we're here 24/7.",
+                "Absolutely. Call +91 63804 47105 or +91 909204 2692, or email info@workhubpro.in and we’ll help right away.",
+                "Sure — +91 63804 47105 / +91 909204 2692 or info@workhubpro.in. What time works for you?"
+            ]);
         } else if (lowerMessage.includes('help') || lowerMessage.includes('support')) {
-            return [
-                "I'm here to help! You can ask me about our services, pricing, or contact information. What do you need?",
-                "How can I assist you today? I can provide information about our services, help with pricing, or connect you with our team.",
-                "I'm your WorkHub Assistant! Feel free to ask about our services, get pricing information, or learn more about what we offer."
-            ];
+            return this.pick([
+                "I’ve got you. Tell me what you’re trying to do and I’ll guide you.",
+                "Happy to help — services, pricing, timelines… what should we start with?",
+                "Sure thing. What are you working on right now?"
+            ]);
         } else {
-            return [
-                "That's interesting! Could you tell me more about what you're looking for?",
-                "I'd be happy to help with that. Could you provide more details?",
-                "Thanks for sharing! Let me know how I can assist you further.",
-                "I understand. Is there anything specific about our services you'd like to know?",
-                "Great question! Let me help you find the information you need."
-            ];
+            // Dynamic site-aware answer
+            const best = this.knowledge.findBest(message);
+            if (best) {
+                const snippet = best.content.length > 220 ? best.content.slice(0, 220) + '…' : best.content;
+                return `${snippet} ${best.link ? `(See ${best.title} → ${best.link})` : ''}`.trim();
+            }
+            const softeners = ['Got it.', 'Sounds good.', 'Thanks for the context.', 'Understood.'];
+            const prompt = this.pick([
+                'Could you share a bit more detail?',
+                'What outcome are you aiming for?',
+                'What’s the budget or timeline you have in mind?',
+                'Which part is most important to you?'
+            ]);
+            return `${this.pick(softeners)} ${prompt}`;
+        }
+    }
+    
+    pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+    
+    remember(role, text) {
+        this.conversation.push({ role, text, time: Date.now() });
+        if (this.conversation.length > this.maxMemory) {
+            this.conversation.shift();
         }
     }
     
@@ -860,7 +959,7 @@ class FloatingActionButton {
                 document.querySelector('#contact').scrollIntoView({ behavior: 'smooth' });
                 break;
             case 'email':
-                window.location.href = 'mailto:info@workhubpro.com';
+                window.location.href = 'mailto:info@workhubpro.in';
                 break;
             case 'chat':
                 const chatbot = new Chatbot();

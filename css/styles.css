@@ -1362,6 +1362,29 @@ body {
     font-size: 0.95rem;
 }
 
+/* Phone links styling */
+.phone-link {
+    color: var(--text-dark);
+    text-decoration: none;
+    white-space: nowrap; /* prevent breaking between country code and number */
+}
+
+.phone-link:hover {
+    color: var(--primary-blue);
+}
+
+.phone-sep { white-space: nowrap; }
+
+/* Email links */
+.email-link {
+    color: var(--text-dark);
+    text-decoration: none;
+}
+
+.email-link:hover {
+    color: var(--primary-blue);
+}
+
 .privacy-actions {
     display: flex;
     gap: 15px;
