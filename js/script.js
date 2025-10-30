@@ -105,65 +105,48 @@ window.addEventListener('scroll', () => {
 // Initial call to set active state on page load
 updateActiveNavLink();
 
-// Form submission handling
+// Contact form: let the browser handle native mailto flow for best compatibility
+// Intentionally no JS submit handler here. The form in index.html uses
+// `action="mailto:info@workhubpro.in"` so devices can choose their email app.
 const contactForm = document.querySelector('.contact-form');
 if (contactForm) {
-    contactForm.addEventListener('submit', async function(e) {
+    contactForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        // Get form data
-        const formData = new FormData(this);
-        const name = formData.get('name');
-        const email = formData.get('email');
-        const subject = formData.get('subject');
-        const message = formData.get('message');
-        
-        // Simple validation
+
+        const formData = new FormData(contactForm);
+        const name = String(formData.get('name') || '').trim();
+        const email = String(formData.get('email') || '').trim();
+        const subject = String(formData.get('subject') || '').trim();
+        const message = String(formData.get('message') || '').trim();
+
         if (!name || !email || !subject || !message) {
             showNotification('Please fill in all fields', 'error');
             return;
         }
-        
         if (!isValidEmail(email)) {
             showNotification('Please enter a valid email address', 'error');
             return;
         }
-        
-        // Show loading state
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.textContent = 'Sending...';
-        submitBtn.disabled = true;
-        
-    try {
-        // Open default mail client with prefilled fields
+
         const to = 'info@workhubpro.in';
-        const mailSubject = `[Contact] ${subject.trim()} — ${name.trim()}`;
-        const mailBody = `Name: ${name.trim()}\nEmail: ${email.trim()}\nSubject: ${subject.trim()}\n\nMessage:\n${message.trim()}`;
+        const mailSubject = `[Contact] ${subject} — ${name}`;
+        const mailBody = `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`;
         const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
 
         const wasVisible = document.visibilityState === 'visible';
         window.location.href = mailtoUrl;
 
-        // If no mail handler is configured, provide a Gmail fallback
+        // Fallback to Gmail compose if no handler
         const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
         setTimeout(() => {
             if (document.visibilityState === 'visible' && wasVisible) {
                 window.open(gmailUrl, '_blank', 'noopener');
-                showNotification('If your email app did not open, we opened Gmail compose in a new tab.', 'info');
+                showNotification('If no email app opened, Gmail compose is opened in a new tab.', 'info');
             }
-        }, 1200);
-        
+        }, 1000);
+
         showNotification('Opening your email client…', 'success');
-        this.reset();
-    } catch (error) {
-        console.error('Contact form mailto error:', error);
-        showNotification('Unable to open your email client. Please email info@workhubpro.in.', 'error');
-    } finally {
-        // Reset button state
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
-    }
+        contactForm.reset();
     });
 }
 
