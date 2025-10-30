@@ -141,7 +141,18 @@ if (contactForm) {
         const mailSubject = `[Contact] ${subject.trim()} — ${name.trim()}`;
         const mailBody = `Name: ${name.trim()}\nEmail: ${email.trim()}\nSubject: ${subject.trim()}\n\nMessage:\n${message.trim()}`;
         const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
+
+        const wasVisible = document.visibilityState === 'visible';
         window.location.href = mailtoUrl;
+
+        // If no mail handler is configured, provide a Gmail fallback
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
+        setTimeout(() => {
+            if (document.visibilityState === 'visible' && wasVisible) {
+                window.open(gmailUrl, '_blank', 'noopener');
+                showNotification('If your email app did not open, we opened Gmail compose in a new tab.', 'info');
+            }
+        }, 1200);
         
         showNotification('Opening your email client…', 'success');
         this.reset();
@@ -1179,7 +1190,11 @@ class FooterInteractions {
                 submitBtn.disabled = true;
                 
                 try {
-                    const response = await fetch('http://localhost:5000/api/newsletter/subscribe', {
+                    // Choose API base based on environment to avoid localhost calls in production
+                    const apiBase = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+                        ? 'http://localhost:'
+                        : 'https://workhubpro.in';
+                    const response = await fetch(`${apiBase}/api/newsletter/subscribe`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1200,7 +1215,8 @@ class FooterInteractions {
                     }
                 } catch (error) {
                     console.error('Newsletter subscription error:', error);
-                    this.showNotification('Network error. Please check your connection and try again.', 'error');
+                    // Fallback message that works across devices and HTTPS
+                    this.showNotification('Network error. Please try again later or email info@workhubpro.in.', 'error');
                 } finally {
                     // Reset button state
                     submitBtn.innerHTML = originalContent;
